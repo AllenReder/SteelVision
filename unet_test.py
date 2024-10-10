@@ -42,11 +42,15 @@ val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # 初始化模型
-model = UNet(num_classes=4).to(device)
+model = UNet().to(device)
+
+# 输出模型参数量大小
+total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(f"模型参数量: {total_params / 1e6:.2f}M")
 
 # 加载模型
 model.load_state_dict(torch.load(
-    './saved_model/unet_epoch_65.pth'))
+    './saved_model/unet_best.pth'))
 model.eval()
 
 # 测试数据集
