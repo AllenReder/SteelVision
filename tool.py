@@ -9,7 +9,7 @@ def get_device():
     return device
 
 
-def show_images(images=[], titles=[], save_path=None, convert=True):
+def show_images(images=[], titles=[], save_path=None, convert=True, show=True):
     plt.figure(figsize=(len(images) * 5, 5))
     for i in range(len(images)):
         if convert and titles[i] != 'image':
@@ -27,4 +27,5 @@ def show_images(images=[], titles=[], save_path=None, convert=True):
 
     if save_path:
         plt.savefig(save_path)  # 保存拼接好的窗口图片
-    plt.show(block=True)  # 确保显示窗口保持打开状态
+    if show:
+        plt.show(block=True)  # 确保显示窗口保持打开状态

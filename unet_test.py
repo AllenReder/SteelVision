@@ -17,8 +17,8 @@ from dataset import SteelDataset
 
 
 # 设置数据路径
-images_path = './NEU_Seg-main/images/test'
-masks_path = './NEU_Seg-main/annotations/test'
+images_path = './data/images/test'
+masks_path = './data/annotations/test'
 image_files = sorted([os.path.join(images_path, f) for f in os.listdir(
     images_path) if f.endswith(('.png', '.jpg'))])
 mask_files = sorted([os.path.join(masks_path, f)
@@ -50,8 +50,8 @@ model.load_state_dict(torch.load(
 model.eval()
 
 # 测试数据集
-test_images_path = './NEU_Seg-main/images/test'
-test_masks_path = './NEU_Seg-main/annotations/test'
+test_images_path = './data/images/test'
+test_masks_path = './data/annotations/test'
 test_image_files = sorted([os.path.join(test_images_path, f) for f in os.listdir(
     test_images_path) if f.endswith(('.png', '.jpg'))])
 test_mask_files = sorted([os.path.join(test_masks_path, f) for f in os.listdir(
@@ -81,7 +81,7 @@ with torch.no_grad():
         # print(np.unique(preds), np.unique(masks))
         if batch_idx % 100 == 0:
             show_images([images[0].cpu().squeeze(0), masks[0], preds[0]], ['image', 'mask', 'pred'],
-                        save_path=f'./temp/test_{batch_idx}.png')
+                        save_path=f'./temp/test_{batch_idx}.png', show=False)
 
         for c in range(1, 4):  # 假设类别是1，2，3
             TP = np.sum((preds == c) & (masks == c))
