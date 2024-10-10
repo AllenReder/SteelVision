@@ -12,6 +12,12 @@ class SteelDataset(Dataset):
         self.image_paths = image_paths
         self.mask_paths = mask_paths
         self.transform = transform
+        self.augmentations = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(15),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2)
+        ])
 
     def __len__(self):
         return len(self.image_paths)
@@ -31,6 +37,14 @@ class SteelDataset(Dataset):
         mask = torch.from_numpy(mask).long()
 
         image = image.unsqueeze(0)
+
+        # Apply augmentations
+        if self.transform:
+            image = self.transform(image)
+            mask = self.transform(mask)
+
+        # Apply additional augmentations
+        image = self.augmentations(image)
 
         # print(f"Image tensor shape: {image.shape}, Channels: {image.shape[0]}")
         # print(f"Mask tensor shape: {mask.shape}, Channels: {mask.shape[0]}")
