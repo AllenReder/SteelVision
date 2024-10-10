@@ -47,9 +47,8 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # 初始化学习率调度器
 # scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
-
 # 训练模型
-epochs = 1
+epochs = 20
 train_losses = []
 val_losses = []
 
@@ -94,12 +93,13 @@ for epoch in range(epochs):
     # 保存模型
     torch.save(model.state_dict(), f'./saved_model/unet_epoch_{epoch+1}.pth')
 
-# 绘制训练和验证损失曲线
-plt.figure(figsize=(10, 5))
-plt.plot(range(1, epochs + 1), train_losses, label='Training Loss')
-plt.plot(range(1, epochs + 1), val_losses, label='Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.title('Training and Validation Loss')
-plt.legend()
-plt.savefig('./train_loss.png')
+    # 绘制训练和验证损失曲线
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, epoch + 2), train_losses, label='Training Loss')
+    plt.plot(range(1, epoch + 2), val_losses, label='Validation Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.savefig(f'./train_loss_epoch_{epoch+1}.png')
+    plt.close()
