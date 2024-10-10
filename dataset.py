@@ -39,11 +39,8 @@ class SteelDataset(Dataset):
         mask = torch.from_numpy(mask).long()
 
         image = image.unsqueeze(0)
+        mask = mask.unsqueeze(0)
 
-        # Apply augmentations
-        if self.transform:
-            image = self.transform(image)
-            mask = self.transform(mask)
 
         # Apply additional augmentations
         seed = np.random.randint(2147483647)
@@ -55,7 +52,6 @@ class SteelDataset(Dataset):
         # Apply image-specific augmentations
         image = self.image_augmentations(image)
 
-        # print(f"Image tensor shape: {image.shape}, Channels: {image.shape[0]}")
-        # print(f"Mask tensor shape: {mask.shape}, Channels: {mask.shape[0]}")
+        mask = mask.squeeze(0)
 
         return image, mask
