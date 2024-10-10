@@ -5,8 +5,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as data
 from torch.utils.data import DataLoader, Dataset
-import torchvision.transforms as transforms
-import cv2
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
@@ -37,7 +35,11 @@ val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # 初始化模型
-model = UNet(num_classes=4).to(device)
+model = UNet().to(device)
+
+# 输出模型参数量大小
+total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(f"模型参数量: {total_params / 1e6:.2f}M")
 
 # 定义损失函数和优化器
 criterion = nn.CrossEntropyLoss()
@@ -47,7 +49,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 # scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
 
 # 训练模型
-epochs = 10
+epochs = 1
 train_losses = []
 val_losses = []
 
