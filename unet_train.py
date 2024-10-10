@@ -101,5 +101,5 @@ for epoch in range(epochs):
     plt.ylabel('Loss')
     plt.title('Training and Validation Loss')
     plt.legend()
-    plt.savefig(f'./train_loss_epoch_{epoch+1}.png')
+    plt.savefig(f'./train_loss.png')
     plt.close()

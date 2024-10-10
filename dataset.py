@@ -15,7 +15,9 @@ class SteelDataset(Dataset):
         self.augmentations = transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomVerticalFlip(),
-            transforms.RandomRotation(15),
+            transforms.RandomRotation(15)
+        ])
+        self.image_augmentations = transforms.Compose([
             transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2)
         ])
 
@@ -44,7 +46,14 @@ class SteelDataset(Dataset):
             mask = self.transform(mask)
 
         # Apply additional augmentations
+        seed = np.random.randint(2147483647)
+        torch.manual_seed(seed)
         image = self.augmentations(image)
+        torch.manual_seed(seed)
+        mask = self.augmentations(mask)
+
+        # Apply image-specific augmentations
+        image = self.image_augmentations(image)
 
         # print(f"Image tensor shape: {image.shape}, Channels: {image.shape[0]}")
         # print(f"Mask tensor shape: {mask.shape}, Channels: {mask.shape[0]}")
