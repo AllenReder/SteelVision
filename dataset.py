@@ -6,19 +6,22 @@ import numpy as np
 import torch
 import cv2
 
+
 class SteelDataset(Dataset):
 
-    def __init__(self, image_paths, mask_paths, transform=None):
+    def __init__(self, image_paths, mask_paths, transform=None, eval=False):
         self.image_paths = image_paths
         self.mask_paths = mask_paths
         self.transform = transform
+        self.eval = eval
         self.augmentations = transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomVerticalFlip(),
             transforms.RandomRotation(15)
         ])
         self.image_augmentations = transforms.Compose([
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2)
+            transforms.ColorJitter(
+                brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2)
         ])
 
     def __len__(self):
@@ -41,16 +44,15 @@ class SteelDataset(Dataset):
         image = image.unsqueeze(0)
         mask = mask.unsqueeze(0)
 
-
-        # Apply additional augmentations
-        seed = np.random.randint(2147483647)
-        torch.manual_seed(seed)
-        image = self.augmentations(image)
-        torch.manual_seed(seed)
-        mask = self.augmentations(mask)
-
-        # Apply image-specific augmentations
-        image = self.image_augmentations(image)
+        if not self.eval:
+            # Apply additional augmentations
+            seed = np.random.randint(2147483647)
+            torch.manual_seed(seed)
+            image = self.augmentations(image)
+            torch.manual_seed(seed)
+            mask = self.augmentations(mask)
+            # Apply image-specific augmentations
+            image = self.image_augmentations(image)
 
         mask = mask.squeeze(0)
 

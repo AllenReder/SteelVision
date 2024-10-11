@@ -48,7 +48,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 # 初始化学习率调度器
 # scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
 # 训练模型
-epochs = 20
+epochs = 10
 train_losses = []
 val_losses = []
 
@@ -80,6 +80,9 @@ for epoch in range(epochs):
     # 验证模型
     model.eval()
     val_loss = 0.0
+    TP = {1: 0, 2: 0, 3: 0}
+    FP = {1: 0, 2: 0, 3: 0}
+    FN = {1: 0, 2: 0, 3: 0}
     with torch.no_grad():
         for images, masks in val_loader:
             images, masks = images.to(device), masks.to(device)
@@ -87,6 +90,23 @@ for epoch in range(epochs):
             loss = criterion(outputs, masks)
             val_loss += loss.item()
 
+            masks = masks.cpu().numpy()
+            preds = torch.argmax(outputs, dim=1).cpu().numpy()
+            show_images([images[0].cpu().squeeze(0), masks[0], preds[0]], ['image', 'mask', 'pred'],
+                        save_path=f'./temp/train_{epoch}.png', show=False)
+
+            for c in range(1, 4):
+                TP[c] += np.sum((preds == c) & (masks == c))
+                FP[c] += np.sum((preds == c) & (masks != c))
+                FN[c] += np.sum((preds != c) & (masks == c))
+
+    iou = {1: 0, 2: 0, 3: 0}
+    # 计算 mIoU
+    for c in range(1, 4):
+        iou[c] = TP[c] / (TP[c] + FP[c] + FN[c])
+        print(f"Class {c} IoU: {iou[c]}")
+    mIoU = sum(iou.values()) / len(iou)
+    print(f"Mean IoU (mIoU): {mIoU:.4f}")
     epoch_val_loss = val_loss / len(val_loader)
     val_losses.append(epoch_val_loss)
     print(f"Epoch {epoch+1}, Validation Loss: {epoch_val_loss:.4f}")
