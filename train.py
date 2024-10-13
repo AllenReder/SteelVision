@@ -28,8 +28,8 @@ train_images, val_images, train_masks, val_masks = train_test_split(
 # 数据集和数据加载器
 train_dataset = SteelDataset(train_images, train_masks)
 val_dataset = SteelDataset(val_images, val_masks)
-train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False)
 
 # 定义训练设备
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -46,9 +46,9 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # 初始化学习率调度器
-scheduler = CosineAnnealingLR(optimizer, T_max=3, eta_min=0)
+scheduler = CosineAnnealingLR(optimizer, T_max=10, eta_min=1e-6)
 # 训练模型
-epochs = 10
+epochs = 50
 train_losses = []
 val_losses = []
 
@@ -69,13 +69,18 @@ for epoch in range(epochs):
 
         running_loss += loss.item()
 
+        # 释放变量内存
+        del images, masks, outputs, loss
+        torch.cuda.empty_cache()
+
     epoch_train_loss = running_loss / len(train_loader)
     train_losses.append(epoch_train_loss)
     print(f"Epoch {epoch+1}, Training Loss: {epoch_train_loss:.4f}")
 
     # 更新学习率
     scheduler.step()
-    print(f"Epoch {epoch+1}, Learning Rate: {scheduler.get_last_lr()}")
+    current_lr = optimizer.param_groups[0]['lr']
+    print(f"Epoch {epoch+1}, Learning Rate: {current_lr}")
 
     # 验证模型
     model.eval()
@@ -84,24 +89,29 @@ for epoch in range(epochs):
     FP = {1: 0, 2: 0, 3: 0}
     FN = {1: 0, 2: 0, 3: 0}
     with torch.no_grad():
+        torch.cuda.empty_cache()
         for images, masks in val_loader:
             images, masks = images.to(device), masks.to(device)
             outputs = model(images)
             loss = criterion(outputs, masks)
             val_loss += loss.item()
 
-            masks = masks.cpu().numpy()
-            preds = torch.argmax(outputs, dim=1).cpu().numpy()
-            show_images([images[0].cpu().squeeze(0), masks[0], preds[0]], ['image', 'mask', 'pred'],
-                        save_path=f'./temp/train_{epoch}.png', show=False)
+            masks = masks.detach().cpu().numpy()
+            preds = torch.argmax(outputs, dim=1).detach().cpu().numpy()
+
+            if epoch % 5 == 0:
+                show_images([images[0].cpu().squeeze(0), masks[0], preds[0]], ['image', 'mask', 'pred'],
+                            save_path=f'./temp/train_{epoch}.png', show=False)
 
             for c in range(1, 4):
                 TP[c] += np.sum((preds == c) & (masks == c))
                 FP[c] += np.sum((preds == c) & (masks != c))
                 FN[c] += np.sum((preds != c) & (masks == c))
 
+            del images, masks, outputs, loss
+            torch.cuda.empty_cache()
+
     iou = {1: 0, 2: 0, 3: 0}
-    # 计算 mIoU
     for c in range(1, 4):
         iou[c] = TP[c] / (TP[c] + FP[c] + FN[c])
         print(f"Class {c} IoU: {iou[c]}")
@@ -113,13 +123,13 @@ for epoch in range(epochs):
     # 保存模型
     torch.save(model.state_dict(), f'./saved_model/unet_resnet_epoch_{epoch+1}.pth')
 
-    # 绘制训练和验证损失曲线
-    plt.figure(figsize=(10, 5))
-    plt.plot(range(1, epoch + 2), train_losses, label='Training Loss')
-    plt.plot(range(1, epoch + 2), val_losses, label='Validation Loss')
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
-    plt.legend()
-    plt.savefig(f'./train_unet_resnet_loss.png')
-    plt.close()
+    if epoch % 5 == 0:
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, epoch + 2), train_losses, label='Training Loss')
+        plt.plot(range(1, epoch + 2), val_losses, label='Validation Loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title('Training and Validation Loss')
+        plt.legend()
+        plt.savefig(f'./train_unet_resnet_loss.png')
+        plt.close()
