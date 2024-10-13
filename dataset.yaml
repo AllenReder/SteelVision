@@ -1,0 +1,6 @@
+path: /home/allen/data/Program/AI/SteelVision/yolo_dataset
+train: images/train
+val: images/val
+
+nc: 3
+names: ['1', '2', '3']
