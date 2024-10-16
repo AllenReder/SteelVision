@@ -85,9 +85,8 @@ for epoch in range(epochs):
     # 验证模型
     model.eval()
     val_loss = 0.0
-    TP = {1: 0, 2: 0, 3: 0}
-    FP = {1: 0, 2: 0, 3: 0}
-    FN = {1: 0, 2: 0, 3: 0}
+    inter = {1: 0, 2: 0, 3: 0}
+    union = {1: 0, 2: 0, 3: 0}
     with torch.no_grad():
         torch.cuda.empty_cache()
         for images, masks in val_loader:
@@ -104,16 +103,15 @@ for epoch in range(epochs):
                             save_path=f'./temp/train_{epoch}.png', show=False)
 
             for c in range(1, 4):
-                TP[c] += np.sum((preds == c) & (masks == c))
-                FP[c] += np.sum((preds == c) & (masks != c))
-                FN[c] += np.sum((preds != c) & (masks == c))
+                inter[c] += np.sum((preds == c) & (masks == c))
+                union[c] += np.sum((preds == c) | (masks == c))
 
             del images, masks, outputs, loss
             torch.cuda.empty_cache()
 
     iou = {1: 0, 2: 0, 3: 0}
     for c in range(1, 4):
-        iou[c] = TP[c] / (TP[c] + FP[c] + FN[c])
+        iou[c] = inter[c] / (union[c] + inter[c])
         print(f"Class {c} IoU: {iou[c]}")
     mIoU = sum(iou.values()) / len(iou)
     print(f"Mean IoU (mIoU): {mIoU:.4f}")
