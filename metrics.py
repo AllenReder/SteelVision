@@ -1,17 +1,14 @@
 import os
 import cv2
-import torch
 import numpy as np
-import time
 
 # 设置路径
 label_dir = 'data/annotations/test'
 pred_dir = 'data/annotations/test_modified'
 
 # 计算每个类别的IoU和mIoU
-TP = {1: 0, 2: 0, 3: 0}
-FP = {1: 0, 2: 0, 3: 0}
-FN = {1: 0, 2: 0, 3: 0}
+inter = {1: 0, 2: 0, 3: 0}
+union = {1: 0, 2: 0, 3: 0}
 
 for img_name in os.listdir(label_dir):
     if img_name.endswith('.jpg') or img_name.endswith('.png'):
@@ -28,15 +25,14 @@ for img_name in os.listdir(label_dir):
         pred_mask = np.array(pred_mask)
 
         for cls in range(1, 4):
-            TP[cls] += np.sum((pred_mask == cls) & (label_mask == cls))
-            FP[cls] += np.sum((pred_mask == cls) & (label_mask != cls))
-            FN[cls] += np.sum((pred_mask != cls) & (label_mask == cls))
+            inter[cls] += np.sum((pred_mask == cls) & (label_mask == cls))
+            union[cls] += np.sum((pred_mask == cls) | (label_mask == cls))
 
 
 iou = {1: 0, 2: 0, 3: 0}
 # 计算 mIoU
 for c in range(1, 4):
-    iou[c] = TP[c] / (TP[c] + FP[c] + FN[c])
+    iou[c] = inter[c] / union[c]
     print(f"Class {c} IoU: {iou[c]}")
 mIoU = sum(iou.values()) / len(iou)
 print(f"Mean IoU (mIoU): {mIoU:.4f}")
